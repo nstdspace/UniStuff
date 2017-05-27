@@ -1,4 +1,4 @@
-package de.skysoldier.uni.ds;
+package de.nstdspace.uni.ds;
 
 import java.util.HashMap;
 import java.util.HashSet;
