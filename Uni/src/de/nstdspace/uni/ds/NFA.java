@@ -38,7 +38,7 @@ public class NFA<S, A> {
 	
 	public Set<S> simulate(S q, List<A> w){
 		HashSet<S> result = new HashSet<>();
-		simulate(q, new HashSet<S>(), w);
+		simulate(q, result, w);
 		return result;
 	}
 	
@@ -63,8 +63,8 @@ public class NFA<S, A> {
 		m.addTransition(4, Sigma.UP, 2);
 		List<Sigma> input = new LinkedList<>();
 		input.add(Sigma.RIGHT);
-//		input.add(Sigma.DOWN);
-//		input.add(Sigma.LEFT);
+		input.add(Sigma.DOWN);
+		input.add(Sigma.LEFT);
 		Set<Integer> reachable = m.simulate(1, input);
 		System.out.println(reachable);
 	}
