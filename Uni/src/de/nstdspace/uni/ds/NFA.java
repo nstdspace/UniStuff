@@ -1,6 +1,5 @@
-package de.nstdspace.uni.ds;
-
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -8,7 +7,7 @@ import java.util.Set;
 
 public class NFA<S, A> {
 	
-	private HashMap<S, HashMap<A, S>> transitions;
+	private HashMap<S, HashMap<A, HashSet<S>>> transitions;
 	
 	public NFA(Set<S> states){
 		this.transitions = new HashMap<>();
@@ -18,36 +17,42 @@ public class NFA<S, A> {
 		if(!transitions.containsKey(q)){
 			transitions.put(q, new HashMap<>());
 		}
-		transitions.get(q).put(a, p);
+        if(!transitions.get(q).containsKey(a)){
+        	transitions.get(q).put(a, new HashSet<S>());
+        }  
+		transitions.get(q).get(a).add(p);
 	}
 	
-	private void simulate(S q, Set<S> result, List<A> input){
+	private void simulate(S q, Set<S> result, ArrayList<A> input, int inputIndex){
 		if(transitions.containsKey(q)){
-			HashMap<A, S> transitionsFromQ = transitions.get(q);
+			HashMap<A, HashSet<S>> transitionsFromQ = transitions.get(q);
 			for(A a : transitionsFromQ.keySet()){
-				if(input.contains(a)){
-					S newState = transitionsFromQ.get(a);
-					if(!result.contains(newState)){
-						result.add(transitionsFromQ.get(a));
-						simulate(newState, result, input);
-					}
+				if(input.get(inputIndex).equals(a)){
+                    for(S newState : transitionsFromQ.get(a)){
+                        if(!result.contains(newState)){
+					 	    if(inputIndex < input.size() - 1)	
+                      		    simulate(newState, result, input, inputIndex + 1);
+                            else 
+                        	    result.add(newState);
+                        }
+                    }
 				}
 			}
 		}
-	}
+    }
 	
-	public Set<S> simulate(S q, List<A> w){
-		HashSet<S> result = new HashSet<>();
-		simulate(q, result, w);
-		return result;
+	public Set<S> simulate(S q, List<A> input){
+        HashSet<S> result = new HashSet<>();
+		simulate(q, result, new ArrayList<>(input), 0);
+        return result;
 	}
 	
 	enum Sigma {
 		RIGHT, DOWN, LEFT, UP
 	}
-
-	public static void main(String[] args) {
-		Set<Integer> states = new HashSet<>();
+	
+    static NFA<Integer, Sigma> createTestNFA(){
+    	Set<Integer> states = new HashSet<>();
 		states.add(1);
 		states.add(2);
 		states.add(3);
@@ -61,11 +66,38 @@ public class NFA<S, A> {
 		m.addTransition(3, Sigma.UP, 1);
 		m.addTransition(4, Sigma.LEFT, 3);
 		m.addTransition(4, Sigma.UP, 2);
-		List<Sigma> input = new LinkedList<>();
+        return m;
+    }
+  
+    static void test1(){
+    	List<Sigma> input = new LinkedList<>();
 		input.add(Sigma.RIGHT);
 		input.add(Sigma.DOWN);
 		input.add(Sigma.LEFT);
-		Set<Integer> reachable = m.simulate(1, input);
+		Set<Integer> reachable = createTestNFA().simulate(1, input);
 		System.out.println(reachable);
-	}
+    }
+  
+    static void test2(){
+        HashSet<Integer> states = new HashSet<>();
+      	states.add(1);
+        states.add(2);
+        states.add(3);
+        states.add(4);
+    	NFA<Integer, Character> nfa = new NFA<>(states);
+    	nfa.addTransition(1, 'a', 2);
+      	nfa.addTransition(2, 'a', 3);
+      	nfa.addTransition(3, 'a', 4);
+        nfa.addTransition(3, 'a', 1);
+      	ArrayList<Character> input = new ArrayList<>();
+    	input.add('a');
+        input.add('a');
+        input.add('a');
+        System.out.println(nfa.simulate(1, input));
+    }
+  
+	public static void main(String[] args) {
+		//test1();
+    	test2();
+    }
 }
