@@ -3,16 +3,13 @@ package de.nstdspace.uni.ds;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 public class NFA<S, A> {
 
@@ -32,35 +29,38 @@ public class NFA<S, A> {
 		transitions.get(q).get(a).add(p);
 	}
 
-	private void simulate(S q, Set<S> result, ArrayList<A> input, int inputIndex) {
-		if (transitions.containsKey(q)) {
-			HashMap<A, HashSet<S>> transitionsFromQ = transitions.get(q);
-			for (A a : transitionsFromQ.keySet()) {
-				if (input.get(inputIndex).equals(a)) {
-					for (S newState : transitionsFromQ.get(a)) {
-						if (!result.contains(newState)) {
-							if (inputIndex < input.size() - 1)
-								simulate(newState, result, input, inputIndex + 1);
-							else
-								result.add(newState);
-						}
-					}
+	private HashSet<S> simulate(S q, List<A> input){
+		HashSet<S> result = new HashSet<>();
+		result.add(q);
+		for(int inputIndex = 0; inputIndex < input.size(); inputIndex++){
+			A currentInput = input.get(inputIndex);
+			HashSet<S> reachableStates = new HashSet<>();
+			for(S s : result){
+				HashMap<A, HashSet<S>> transitionsFromS = transitions.get(s);
+				if(transitionsFromS.containsKey(currentInput)){
+					reachableStates.addAll(transitionsFromS.get(currentInput));
 				}
 			}
+			result = reachableStates;
 		}
-	}
-
-	public Set<S> simulate(S q, List<A> input) {
-		HashSet<S> result = new HashSet<>();
-		simulate(q, result, new ArrayList<>(input), 0);
 		return result;
 	}
-
+	
+	@SuppressWarnings("unchecked")
+	public ArrayList<A> createInputList(A... inputs){
+		ArrayList<A> inputList = new ArrayList<>();
+		for(A a : inputs){
+			inputList.add(a);
+		}
+		return inputList;
+	}
+	
 	enum Sigma {
 		RIGHT, DOWN, LEFT, UP
 	}
 
-	static NFA<Integer, Sigma> createTestNFA() {
+	static void test1() {
+		LinkedList<Sigma> input = new LinkedList<>();
 		NFA<Integer, Sigma> m = new NFA<>();
 		m.addTransition(1, Sigma.RIGHT, 2);
 		m.addTransition(1, Sigma.DOWN, 3);
@@ -70,31 +70,12 @@ public class NFA<S, A> {
 		m.addTransition(3, Sigma.UP, 1);
 		m.addTransition(4, Sigma.LEFT, 3);
 		m.addTransition(4, Sigma.UP, 2);
-		return m;
-	}
-
-	static void test1() {
-		List<Sigma> input = new LinkedList<>();
 		input.add(Sigma.RIGHT);
 		input.add(Sigma.DOWN);
 		input.add(Sigma.LEFT);
-		Set<Integer> reachable = createTestNFA().simulate(1, input);
-		System.out.println(reachable);
+		System.out.println(m.simulate(1, input));
 	}
 
-	static void test2() {
-		NFA<Integer, Character> nfa = new NFA<>();
-		nfa.addTransition(1, 'a', 2);
-		nfa.addTransition(2, 'a', 3);
-		nfa.addTransition(3, 'a', 4);
-		nfa.addTransition(3, 'a', 1);
-		ArrayList<Character> input = new ArrayList<>();
-		input.add('a');
-		input.add('a');
-		input.add('a');
-		System.out.println(nfa.simulate(1, input));
-	}
-	
 	static void testFile() throws IOException {
 		File file = new File("C:\\Users\\Skysoldier\\Desktop\\H8.trans");
 		BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
@@ -104,34 +85,16 @@ public class NFA<S, A> {
 			String lineSplit[] = line.split(" ");
 			nfa.addTransition(Integer.parseInt(lineSplit[0]), lineSplit[1].charAt(0), Integer.parseInt(lineSplit[2]));
 		}
-		ArrayList<Character> input = new ArrayList<>();
-		String inputString = "ababbbaa";
-		for(char c : inputString.toCharArray()){
-			input.add(c);
-		}
-		System.out.println(nfa.simulate(7, input));
-	}
-	
-	static void debug(){
-		NFA<Character, Integer> nfa = new NFA<>();
-		nfa.addTransition('a', 1, 'd');
-		nfa.addTransition('a', 1, 'c');
-		nfa.addTransition('a', 2, 'b');
-		nfa.addTransition('b', 1, 'b');
-		ArrayList<Integer> input = new ArrayList<>();
-		input.add(1);
-		System.out.println(nfa.simulate('a', input));
+		System.out.println(nfa.simulate(7, nfa.createInputList('a', 'b', 'a', 'b', 'b', 'b', 'a', 'a')));
 	}
 
 	public static void main(String[] args) {
-		// test1();
-		// test2();
-//		try{
-//			testFile();
-//		}
-//		catch(IOException e){
-//			e.printStackTrace();
-//		}
-		debug();
+		test1();
+		try{
+			testFile();
+		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
 	}
 }
